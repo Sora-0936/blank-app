@@ -1,103 +1,83 @@
 import streamlit as st
 import json
-import os
 
-# 1. データの読み込み
+# --- データの読み込み ---
 @st.cache_data
 def load_fuda_data():
-    file_path = 'fuda. json'
-    if not os.path.exists(file_path):
-        st.error(f"エラー: {file_path} が見つかりません。GitHubにアップロードされているか確認してください。")
-        return []
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open('fuda.json', 'r', encoding='utf-8') as f:
         return json.load(f)
 
 fuda_list = load_fuda_data()
-fuda_dict = {f["kimariji"]: f for f in fuda_list}
+# 五十音順に並べ替え
+fuda_list = sorted(fuda_list, key=lambda x: x['kimariji'])
 
-# アプリのタイトル
+# --- セッション状態の初期化 ---
+if 'selected_fuda' not in st.session_state:
+    st.session_state.selected_fuda = []
+
 st.set_page_config(page_title="かるた配置サポーター", layout="wide")
-st.title("🎴 競技かるた・初心者向け定位置サポーター")
-st.write("自陣の25枚を選んで、自分にぴったりの配置を考えましょう。")
+st.title("🎴 かるた札 選択パネル")
 
-# --- ステップ1: 自陣の25枚を選択 ---
-st.sidebar.header("1. 自陣の25枚を選択")
-selected_names = st.sidebar.multiselect(
-    "札を選んでください",
-    options=list(fuda_dict.keys()),
-    max_selections=25,
-    help="25枚まで選べます。決まり字で検索も可能です。"
-)
+# --- 選択状況の表示 ---
+st.subheader(f"現在の選択: {len(st.session_state.selected_fuda)} / 25 枚")
+if len(st.session_state.selected_fuda) > 0:
+    with st.expander("選択中の札を確認・リセット"):
+        st.write(", ".join(st.session_state.selected_fuda))
+        if st.button("選択をすべてクリア"):
+            st.session_state.selected_fuda = []
+            st.rerun()
 
-st.sidebar.write(f"現在の選択: **{len(selected_names)} / 25枚**")
+st.divider()
 
-# --- ステップ2: 配置のメイン画面 ---
-if len(selected_names) < 25:
-    st.warning("左側のサイドバーから、まずは25枚の札を選んでください。")
-else:
-    st.success("25枚選ばれました！各段に振り分けてみましょう。")
+# --- 絞り込み機能 ---
+col_filter1, col_filter2 = st.columns([1, 2])
+with col_filter1:
+    filter_type = st.radio("絞り込み", ["すべて", "一字決まり", "二字決まり", "大山札"], horizontal=True)
+
+# --- タブによる五十音検索 ---
+tabs = st.tabs(["あ行", "か・さ行", "た・な行", "は・ま行", "や・ら・わ行"])
+
+def render_fuda_grid(target_chars):
+    """特定の頭文字で始まる札をグリッド表示する関数"""
+    filtered = [f for f in fuda_list if f['kimariji'][0] in target_chars]
     
-    # 25枚を振り分けるためのリスト（現在選択されていない札を表示するため）
-    remaining_fuda = list(selected_names)
+    # 絞り込み条件の適用
+    if filter_type == "一字決まり":
+        filtered = [f for f in filtered if f['type'] == 1]
+    elif filter_type == "二字決まり":
+        filtered = [f for f in filtered if f['type'] == 2]
+    elif filter_type == "大山札":
+        filtered = [f for f in filtered if f['type'] >= 6]
 
-    # 盤面を模したレイアウト (左陣・右陣 × 3段)
-    st.header("2. 盤面配置")
-    
-    col_left, col_right = st.columns(2)
+    # 3列のグリッドで表示
+    cols = st.columns(3)
+    for i, fuda in enumerate(filtered):
+        with cols[i % 3]:
+            # すでに選択されているかチェック
+            is_selected = fuda['kimariji'] in st.session_state.selected_fuda
+            
+            # チェックボックスをボタンのように見せる（実際にはCheckbox）
+            if st.checkbox(f"{fuda['kimariji']} ({fuda['shimo'][:6]}...)", value=is_selected, key=fuda['id']):
+                if fuda['kimariji'] not in st.session_state.selected_fuda:
+                    if len(st.session_state.selected_fuda) < 25:
+                        st.session_state.selected_fuda.append(fuda['kimariji'])
+                    else:
+                        st.warning("これ以上選択できません（上限25枚）")
+            else:
+                if fuda['kimariji'] in st.session_state.selected_fuda:
+                    st.session_state.selected_fuda.remove(fuda['kimariji'])
 
-    with col_left:
-        st.subheader("自陣 左（Hidari）")
-        l_top = st.multiselect("上段", options=selected_names, key="l_top")
-        l_mid = st.multiselect("中段", options=selected_names, key="l_mid")
-        l_low = st.multiselect("下段", options=selected_names, key="l_low")
+# タブごとの中身
+with tabs[0]: render_fuda_grid("あいうえお")
+with tabs[1]: render_fuda_grid("かきくけこさしすせそ")
+with tabs[2]: render_fuda_grid("たちつてとなにぬねの")
+with tabs[3]: render_fuda_grid("はひふへほまみむめも")
+with tabs[4]: render_fuda_grid("やゆよらりるれろわ")
 
-    with col_right:
-        st.subheader("自陣 右（Migi）")
-        r_top = st.multiselect("上段", options=selected_names, key="r_top")
-        r_mid = st.multiselect("中段", options=selected_names, key="r_mid")
-        r_low = st.multiselect("下段", options=selected_names, key="r_low")
+st.divider()
 
-    # --- ステップ3: 初心者向け診断アドバイス ---
-    st.divider()
-    st.header("🔍 配置診断アドバイス")
-
-    # 配置された札の合計を確認
-    all_placed = l_top + l_mid + l_low + r_top + r_mid + r_low
-    unique_placed = set(all_placed)
-
-    if len(all_placed) != 25:
-        st.info(f"現在 {len(all_placed)} 枚配置されています。25枚すべて配置すると詳細なアドバイスが表示されます。")
-    elif len(all_placed) != len(unique_placed):
-        st.error("⚠️ 同じ札が複数の場所に配置されています。重複を解消してください。")
-    else:
-        # アドバイスロジックの例
-        advices = []
-        
-        # 1. 一字決まりのチェック
-        ichiji = ["む", "す", "め", "ふ", "さ", "ほ", "せ"]
-        placed_ichiji = [f for f in all_placed if f in ichiji]
-        low_tier_ichiji = [f for f in (l_low + r_low) if f in ichiji]
-        
-        if len(placed_ichiji) > len(low_tier_ichiji):
-            advices.append("💡 **一字決まりの札**は、反応しやすいように下段に置くのがおすすめです。")
-        
-        # 2. 友札（頭文字）の重複チェック
-        first_chars = [f[0] for f in all_placed]
-        from collections import Counter
-        counts = Counter(first_chars)
-        duplicates = [char for char, count in counts.items() if count > 1]
-        
-        if duplicates:
-            advices.append(f"💡 「{'」「'.join(duplicates)}」で始まる**友札**が複数あります。これらは左右に分けて置くと、お手つきを防ぎやすくなります。")
-
-        # アドバイスの表示
-        if advices:
-            for a in advices:
-                st.write(a)
-        else:
-            st.balloons()
-            st.success("素晴らしい配置です！バランス良く配置されています。")
-
-# 100首一覧をいつでも見れるように（デバッグ・参考用）
-with st.expander("参考：百人一首 一覧を表示"):
-    st.table(fuda_list)
+# --- 25枚選んだ後の盤面配置へ ---
+if len(st.session_state.selected_fuda) == 25:
+    if st.button("この25枚で配置を考える ➔", type="primary"):
+        st.success("盤面配置モードへ進みます（ここに配置ロジックを繋げます）")
+        # ここに、前回の回答で作成した「盤面配置用コード」を記述または呼び出します
