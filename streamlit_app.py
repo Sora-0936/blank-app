@@ -140,6 +140,7 @@ if len(st.session_state.selected_fuda) == 25:
 else:
     st.warning("まず上のパネルから25枚の札を選んでください。")
 
-# 参考用データ表示
-with st.expander("参考：札データ一覧"):
-    st.write(fuda_list)
+
+# 100首一覧をいつでも見れるように（デバッグ・参考用）
+with st.expander("参考：百人一首 一覧を表示"):
+    st.table(fuda_list)
