@@ -5,7 +5,7 @@ import os
 # 1. データの読み込み
 @st.cache_data
 def load_fuda_data():
-    file_path = 'fuda.json'
+    file_path = 'fuda. json'
     if not os.path.exists(file_path):
         st.error(f"エラー: {file_path} が見つかりません。GitHubにアップロードされているか確認してください。")
         return []
