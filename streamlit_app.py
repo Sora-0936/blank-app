@@ -72,7 +72,7 @@ st.title("🎴 かるた配置サポーター (Supabase連携版)")
 # --- 4. 札の選択フェーズ ---
 st.subheader(f"1. 自陣の25枚を選択 (現在: {len(st.session_state.selected_fuda)} / 25 枚)")
 if len(st.session_state.selected_fuda) > 0:
-    with st.expander("選択中の札を確認・リセット"):
+    with st.expander("選択中の札を確認・リセット"):
         st.write(", ".join(st.session_state.selected_fuda))
         if st.button("選択をすべてクリア"):
             st.session_state.selected_fuda = []
