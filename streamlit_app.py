@@ -4,6 +4,21 @@ import os
 from collections import Counter
 from supabase import create_client, Client
 
+# --- Supabase設定 ---
+# このブロックをインポートのすぐ下に配置してください
+if "supabase_url" in st.secrets and "supabase_key" in st.secrets:
+    try:
+        url: str = st.secrets["supabase_url"]
+        key: str = st.secrets["supabase_key"]
+        # ここで 'supabase' という変数を作っています
+        supabase: Client = create_client(url, key)
+    except Exception as e:
+        st.error(f"Supabaseへの接続に失敗しました: {e}")
+        st.stop()
+else:
+    st.error("StreamlitのSecretsに 'supabase_url' と 'supabase_key' が設定されていません。")
+    st.stop() # 設定がない場合はここで処理を止める
+
 # --- 1. データの読み込み (既存) ---
 @st.cache_data
 def load_fuda_data():
