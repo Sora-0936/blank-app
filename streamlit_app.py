@@ -4,15 +4,6 @@ import os
 from collections import Counter
 from supabase import create_client, Client
 
-# --- Supabase設定 ---
-# StreamlitのSecrets (Settings > Secrets) に URLとKEYを設定してください
-if "supabase_url" in st.secrets:
-    url: str = st.secrets["supabase_url"]
-    key: str = st.secrets["supabase_key"]
-    supabase: Client = create_client(url, key)
-else:
-    st.error("Supabaseの認証情報が設定されていません。")
-
 # --- 1. データの読み込み (既存) ---
 @st.cache_data
 def load_fuda_data():
