@@ -4,6 +4,11 @@ import os
 from collections import Counter
 from supabase import create_client, Client
 
+# Supabase接続
+url: str = st.secrets["SUPABASE_URL"]
+key: str = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(url, key)
+
 # --- 1. データの読み込み (既存) ---
 @st.cache_data
 def load_fuda_data():
