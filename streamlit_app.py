@@ -60,7 +60,7 @@ try:
         if st.sidebar.button("ロードする"):
             load_deck(deck_to_load)
 except Exception as e:
-    st.sidebar.error("データの読み込みに失敗しました")
+    st.sidebar.error(f"エラー内容: {e}")
 
 st.title("🎴 かるた配置サポーター (Supabase連携版)")
 
