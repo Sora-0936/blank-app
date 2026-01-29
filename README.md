@@ -44,7 +44,7 @@ pip install streamlit pandas supabase plotly
 ### 2. データの準備
 プロジェクトのルートディレクトリに `fuda.json` （百人一首のデータファイル）が配置されていることを確認してください。このファイルはアプリが札情報を読み込むために必須となります。
 
-```markdown
+
 **ディレクトリ構成の確認:**
 .
 ├── streamlit_app.py  # アプリ本体
