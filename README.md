@@ -1,19 +1,52 @@
-# 🎈 Blank app template
+# 🎴 かるた配置サポーター (Supabase連携版)
 
-A simple Streamlit app template for you to modify!
+競技かるたの自陣25枚の配置をシミュレーションし、統計的に分析・保存ができるWebアプリケーションです。
+自分の配置のクセを可視化し、より戦略的な盤面構成をサポートします。
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+## 🚀 アプリを試す
+以下のURLからすぐに試用いただけます：
+**[ここにStreamlit Cloudの公開URLを貼る]**
+*(例: https://your-app-name.streamlit.app/)*
 
-### How to run it on your own machine
+---
 
-1. Install the requirements
+## ✨ 主な機能
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+### 1. 札の選択と管理
+- 百人一首100枚の中から自陣の25枚を直感的に選択。
+- 一字決まり、二字決まり、大山札などの条件で素早く絞り込みが可能。
 
-2. Run the app
+### 2. スマートな盤面配置
+- ドラッグ＆ドロップ感覚で上段・中段・下段（左右）に札を振り分け。
+- **重複選択防止機能**: 一度配置した札は他の段の選択肢から自動で除外されるため、ミスがありません。
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+### 3. 配置診断アドバイス
+- 競技かるたの定石に基づき、配置を自動診断。
+- 「一字決まりが下段にあるか」「友札が左右に分かれているか」などのアドバイスを表示。
+
+### 4. データの保存・ロード (Supabase連携)
+- 作成した配置に名前をつけてクラウドへ保存。
+- 過去の配置をいつでも呼び出して再確認・修正が可能。
+
+### 5. 傾向分析
+- 保存されたデータから、どの札をどの位置に置く傾向があるかを統計的に集計。
+- 自分の得意・不得意な配置パターンを客観的に振り返ることができます。
+
+---
+
+## 🛠 使用技術
+- **Frontend/Backend**: [Streamlit](https://streamlit.io/)
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **Data Visualization**: [Plotly](https://plotly.com/python/), Pandas
+- **Language**: Python 3.9+
+
+---
+
+## 📦 セットアップ方法
+
+ローカル環境で実行する場合は以下の手順に従ってください。
+
+1. **リポジトリをクローン**
+   ```bash
+   git clone [https://github.com/](https://github.com/)[あなたのユーザー名]/[リポジトリ名].git
+   cd [リポジトリ名]
