@@ -47,7 +47,6 @@ pip install streamlit pandas supabase plotly
 
 
 **ディレクトリ構成の確認:**
-.
 - streamlit_app.py  # アプリ本体
 - fuda.json         # 札データ（必須）
 - requirements.txt  # ライブラリ一覧
