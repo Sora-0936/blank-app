@@ -48,9 +48,9 @@ pip install streamlit pandas supabase plotly
 
 **ディレクトリ構成の確認:**
 .
-├── streamlit_app.py  # アプリ本体
-├── fuda.json         # 札データ（必須）
-└── requirements.txt  # ライブラリ一覧
+- streamlit_app.py  # アプリ本体
+- fuda.json         # 札データ（必須）
+- requirements.txt  # ライブラリ一覧
 
 ### 3. アプリの起動
 ターミナルで以下のコマンドを実行し、ローカル環境でブラウザを立ち上げてアプリを起動します。
