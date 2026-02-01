@@ -35,7 +35,7 @@ if 'placement' not in st.session_state:
         "r_top": [], "r_mid": [], "r_low": []
     }
 
-st.set_page_config(page_title="かるた配置サポーター", layout="wide")
+st.set_page_config(page_title="競技かるた配置サポーター", layout="wide")
 
 # --- 3. Supabase連携機能 (保存と読込) ---
 st.sidebar.header("💾 保存済みデータ")
@@ -68,7 +68,7 @@ try:
 except Exception as e:
     st.sidebar.error(f"エラー内容: {e}")
 
-st.title("🎴 かるた配置サポーター (Supabase連携版)")
+st.title("🎴 競技かるた配置サポーター ")
 
 # --- 競技かるたガイド（アプリ内表示用） ---
 with st.expander("💡 初めての方へ：競技かるたの基本ルールと戦略"):
