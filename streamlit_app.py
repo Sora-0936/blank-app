@@ -287,29 +287,8 @@ all_placed_list = (
     st.session_state.get("l_top", []) + st.session_state.get("l_mid", []) + st.session_state.get("l_low", []) +
     st.session_state.get("r_top", []) + st.session_state.get("r_mid", []) + st.session_state.get("r_low", [])
 )
-if len(all_placed_list) < 25:
-    st.info("25枚すべての配置を完了させると、暗記テストを開始できます。")
-else:
-    if 'game_mode' not in st.session_state:
-        st.session_state.game_mode = "waiting" # waiting, memorizing, testing
 
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("暗記スタート！ (配置を表示)"):
-            st.session_state.game_mode = "memorizing"
-    
-    with col2:
-        if st.button("テスト開始！ (配置を隠す)"):
-            st.session_state.game_mode = "testing"
-            # シャッフルしてランダムに1枚選ぶなどのロジックも可能
-            st.session_state.test_target = "l_top" # 例として特定の場所をテスト
-
-    if st.session_state.game_mode == "memorizing":
-        st.success("今のうちに配置を覚えましょう！")
-        # 視覚的に分かりやすく現在の配置を表示
-        # (既存の配置図を表示するロジックを流用)
-    # 札をタイル状に表示する関数（流用用）
+# 札をタイル状に表示する関数（関数定義はブロックの外で行うのが一般的）
 def display_karuta_row(label, fuda_list):
     st.write(f"**{label}**")
     if fuda_list:
@@ -319,20 +298,41 @@ def display_karuta_row(label, fuda_list):
     else:
         st.write("（札なし）")
 
-# これを暗記モード内で呼び出す
-with m_col_left:
-    display_karuta_row("上段", st.session_state.l_top)
-    display_karuta_row("中段", st.session_state.l_mid)
-    display_karuta_row("下段", st.session_state.l_low)
+if len(all_placed_list) < 25:
+    st.info("25枚すべての配置を完了させると、暗記テストを開始できます。")
+else:
+    if 'game_mode' not in st.session_state:
+        st.session_state.game_mode = "waiting" # waiting, memorizing, testing
 
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("暗記スタート！ (配置を表示)"):
+            st.session_state.game_mode = "memorizing"
+    with col2:
+        if st.button("テスト開始！ (配置を隠す)"):
+            st.session_state.game_mode = "testing"
+
+    # --- 暗記モード ---
+    if st.session_state.game_mode == "memorizing":
+        st.success("今のうちに配置を覚えましょう！")
+        
+        m_col_left, m_col_right = st.columns(2)
+        with m_col_left:
+            display_karuta_row("左上段", st.session_state.l_top)
+            display_karuta_row("左中段", st.session_state.l_mid)
+            display_karuta_row("左下段", st.session_state.l_low)
+        with m_col_right:
+            display_karuta_row("右上段", st.session_state.r_top)
+            display_karuta_row("右中段", st.session_state.r_mid)
+            display_karuta_row("右下段", st.session_state.r_low)
+
+    # --- テストモード ---
     elif st.session_state.game_mode == "testing":
         st.warning("空欄を埋めてください。")
         
-        # 簡易的なテストフォーム
-        score = 0
         user_answers = {}
-        
         test_cols = st.columns(2)
+        
         with test_cols[0]:
             st.write("### 左側")
             user_answers["l_top"] = st.multiselect("左上段にあるはずの札は？", options=base_options, key="ans_lt")
@@ -346,28 +346,24 @@ with m_col_left:
 
         if st.button("答え合わせ"):
             correct_data = {
-                "l_top": l_top, "l_mid": l_mid, "l_low": l_low,
-                "r_top": r_top, "r_mid": r_mid, "r_low": r_low
+                "l_top": st.session_state.l_top, "l_mid": st.session_state.l_mid, "l_low": st.session_state.l_low,
+                "r_top": st.session_state.r_top, "r_mid": st.session_state.r_mid, "r_low": st.session_state.r_low
             }
             
-            total_correct = 0
-            for pos in correct_data:
-                # 集合として比較（順不同の場合）
-                is_correct = set(user_answers[pos]) == set(correct_data[pos])
-                if is_correct:
-                    total_correct += len(correct_data[pos])
-                else:
-                    st.error(f"{pos_labels[pos]} が違います！ 正解: {', '.join(correct_data[pos])}")
+            pos_labels = {
+                "l_top": "左上段", "l_mid": "左中段", "l_low": "左下段",
+                "r_top": "右上段", "r_mid": "右中段", "r_low": "右下段"
+            }
             
-            st.metric("正解数", f"{total_correct} / 25")
-            if total_correct == 25:
+            total_correct_count = 0
+            for pos, correct_list in correct_data.items():
+                is_correct = set(user_answers[pos]) == set(correct_list)
+                if is_correct:
+                    total_correct_count += len(correct_list)
+                else:
+                    st.error(f"{pos_labels[pos]} が違います！")
+            
+            st.metric("正解した札の数", f"{total_correct_count} / 25")
+            if total_correct_count == 25:
                 st.balloons()
-                
-            # スコアをSupabaseに保存（オプション）
-            if st.button("スコアを記録する"):
-                try:
-                    score_data = {"score": total_correct, "deck_name": deck_name if 'deck_name' in locals() else "不明"}
-                    supabase.table("karuta_scores").insert(score_data).execute()
-                    st.success("スコアを保存しました！")
-                except:
-                    st.error("スコア保存用のテーブル 'karuta_scores' が見つかりません。")
+                st.success("満点です！完璧に覚えていますね！")
