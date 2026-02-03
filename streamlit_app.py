@@ -182,31 +182,109 @@ if len(st.session_state.selected_fuda) == 25:
             else:
                 st.warning("名前を入力してください")
 
-    # --- 配置診断 ---
+# --- 7. 配置診断（改善版） ---
     st.divider()
-    st.header("🔍 配置診断アドバイス")
+    st.header("🔍 AI配置診断アドバイス")
+
     all_placed_list = l_top + l_mid + l_low + r_top + r_mid + r_low
+
     if len(all_placed_list) == 25:
         advices = []
-        ichiji = ["む", "す", "め", "ふ", "さ", "ほ", "せ"]
-        low_tier_ichiji = [f for f in (l_low + r_low) if f in ichiji]
-        placed_ichiji = [f for f in all_placed_list if f in ichiji]
         
-        if len(placed_ichiji) > len(low_tier_ichiji):
-            advices.append("💡 **一字決まりの札**は下段に置くのが定石です。")
+        # 札の分類準備
+        # fuda_listから情報を引き出すための辞書を作成
+        fuda_info = {f['kimariji']: f for f in fuda_list}
         
+        # 各段の札リスト
+        top_tier = l_top + r_top
+        mid_tier = l_mid + r_mid
+        low_tier = l_low + r_low
+        mid_low_tier = mid_tier + low_tier
+
+        # 1. 決まり字が1字の札 (type == 1)
+        ichiji_fuda = [f for f in all_placed_list if fuda_info.get(f, {}).get('type') == 1]
+        ichiji_not_in_low = [f for f in ichiji_fuda if f not in low_tier]
+        if ichiji_not_in_low:
+            advices.append("""
+            **【1字決まりの配置】**
+            決まり字が1字の札がすべて下段に配置されていないようです。自陣下段に配置することで、相手に取られにくく自分がすぐに反応し取ることができる配置になります。
+            また右下段と左下段で、取る1字の札を分けることも重要です。右と左で、どちらの方がよく反応して取ることができるのかを練習するなかで見つけましょう。
+            """)
+
+        # 2. 決まり字が2字の札 (type == 2)
+        niji_fuda = [f for f in all_placed_list if fuda_info.get(f, {}).get('type') == 2]
+        if niji_fuda:
+            niji_in_mid_low = [f for f in niji_fuda if f in mid_low_tier]
+            # 3分の2以下の場合にアドバイス
+            if len(niji_in_mid_low) <= (len(niji_fuda) * 2 / 3):
+                advices.append("""
+                **【2字決まりの配置】**
+                決まり字が2字の札が上段に多く配置されているようです。このままでは、相手にすぐ攻められる配置です。
+                中段以下に多く配置することで、札との距離が相手よりも自分との方が近くなり、より取りやすくなります。
+                """)
+
+        # 3. 友札は分けて配置されているか
         counts = Counter([f[0] for f in all_placed_list])
-        duplicates = [char for char, count in counts.items() if count > 1]
-        if duplicates:
-            advices.append(f"💡 「{'」「'.join(duplicates)}」の**友札**を左右に分けると、お手つきを防げます。")
-        
+        # 同じ音から始まる札（友札候補）
+        tomo_chars = [char for char, count in counts.items() if count > 1]
+        tomo_issue = False
+        for char in tomo_chars:
+            # 同じ段に同じ音の札が2枚以上あるかチェック
+            if any(len([f for f in tier if f.startswith(char)]) > 1 for tier in [l_top, l_mid, l_low, r_top, r_mid, r_low]):
+                tomo_issue = True
+                break
+        if tomo_issue:
+            advices.append("""
+            **【友札の配置】**
+            友札が隣り合って配置されているようです。そのように配置することで、自陣で取りやすい一方、相手側も狙いやすい配置となってしまいます。
+            最初のうちは離して配置することをお勧めします。競技かるたに慣れてきて、くっつけた方が取りやすいと判断した際はそのようにするとよいと思います。
+            """)
+
+        # 4. 同じ音から始まる札の分散
+        # 同じ側に同じ音が3枚以上固まっている場合などを判定
+        scatter_issue = False
+        for char in tomo_chars:
+            left_side = l_top + l_mid + l_low
+            right_side = r_top + r_mid + r_low
+            if len([f for f in left_side if f.startswith(char)]) >= 3 or len([f for f in right_side if f.startswith(char)]) >= 3:
+                scatter_issue = True
+                break
+        if scatter_issue:
+            advices.append("""
+            **【音の分散】**
+            同じ音から始まる札がかたまって配置されているようです。この場合、相手は音を聞いただけでそのエリアに手を出し、自分よりも先に札に触ることが考えられます。
+            相手が攻めづらい配置にするためにも、なるべく同じ音から始まる札が散らばるような配置を考えましょう。
+            """)
+
+        # 5. 大山札 (type == 6)
+        oyama_fuda = [f for f in all_placed_list if fuda_info.get(f, {}).get('type') == 6]
+        # 下段の端（各リストの最初か最後）にない場合
+        oyama_issue = False
+        for f in oyama_fuda:
+            if f not in [l_low[0] if l_low else "", l_low[-1] if l_low else "", r_low[0] if r_low else "", r_low[-1] if r_low else ""]:
+                oyama_issue = True
+                break
+        if oyama_issue:
+            advices.append("""
+            **【大山札の配置】**
+            大山札が下段の端（内側か外側）に配置されていないようです。大山札を取る際は、手で札を囲うことで相手から守る必要があります。
+            中段などでは正確に囲うことができないため、下段の端に配置しましょう。
+            """)
+
+        # --- 判定結果の表示 ---
         if advices:
-            for a in advices: st.write(a)
+            st.info("💡 **「自分が取りやすく、相手に攻められにくい配置」**を考えることが重要です。これに沿って、あなたの配置に対してアドバイスをします。")
+            for a in advices:
+                st.write(a)
         else:
             st.balloons()
-            st.success("完璧な配置です！")
-else:
-    st.warning("まず25枚選んでください。")
+            st.success("""
+            🎉 **よく考えられた配置です！**
+            これから自分の配置を覚えて、素早く札を取ることができるように練習を積んでいきましょう。
+            また、慣れてきたら、この配置に固執するのではなく、試合展開に応じて臨機応変に対応できるようになるとなお良いですね。
+            """)
+    else:
+        st.warning("まず25枚すべての札を配置してください。")
 
 # --- 8. 統計分析フェーズ ---
 st.divider()
