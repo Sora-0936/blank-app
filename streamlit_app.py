@@ -309,6 +309,21 @@ else:
         st.success("今のうちに配置を覚えましょう！")
         # 視覚的に分かりやすく現在の配置を表示
         # (既存の配置図を表示するロジックを流用)
+    # 札をタイル状に表示する関数（流用用）
+def display_karuta_row(label, fuda_list):
+    st.write(f"**{label}**")
+    if fuda_list:
+        cols = st.columns(len(fuda_list))
+        for i, fuda in enumerate(fuda_list):
+            cols[i].button(fuda, key=f"mem_{label}_{fuda}", disabled=True)
+    else:
+        st.write("（札なし）")
+
+# これを暗記モード内で呼び出す
+with m_col_left:
+    display_karuta_row("上段", st.session_state.l_top)
+    display_karuta_row("中段", st.session_state.l_mid)
+    display_karuta_row("下段", st.session_state.l_low)
 
     elif st.session_state.game_mode == "testing":
         st.warning("空欄を埋めてください。")
