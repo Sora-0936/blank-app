@@ -283,6 +283,10 @@ if st.checkbox("保存データから配置のクセを分析する"):
 st.divider()
 st.header("🧠 暗記トレーニング")
 
+all_placed_list = (
+    st.session_state.get("l_top", []) + st.session_state.get("l_mid", []) + st.session_state.get("l_low", []) +
+    st.session_state.get("r_top", []) + st.session_state.get("r_mid", []) + st.session_state.get("r_low", [])
+)
 if len(all_placed_list) < 25:
     st.info("25枚すべての配置を完了させると、暗記テストを開始できます。")
 else:
