@@ -343,7 +343,7 @@ else:
             user_answers["r_top"] = st.multiselect("右上段にあるはずの札は？", options=base_options, key="ans_rt")
             user_answers["r_mid"] = st.multiselect("右中段にあるはずの札は？", options=base_options, key="ans_rm")
             user_answers["r_low"] = st.multiselect("右下段にあるはずの札は？", options=base_options, key="ans_rl")
-
+            
         if st.button("答え合わせ"):
             correct_data = {
                 "l_top": st.session_state.l_top, "l_mid": st.session_state.l_mid, "l_low": st.session_state.l_low,
@@ -356,14 +356,36 @@ else:
             }
             
             total_correct_count = 0
-            for pos, correct_list in correct_data.items():
-                is_correct = set(user_answers[pos]) == set(correct_list)
-                if is_correct:
-                    total_correct_count += len(correct_list)
-                else:
-                    st.error(f"{pos_labels[pos]} が違います！")
             
+            for pos, correct_list in correct_data.items():
+                user_ans_list = user_answers[pos]
+                
+                # その段の正解札の集合(set)と、ユーザーの回答札の集合の「積集合（共通部分）」を取り、その数を数える
+                correct_set = set(correct_list)
+                user_set = set(user_ans_list)
+                
+                # その段で正解した札の数
+                num_correct_in_pos = len(correct_set.intersection(user_set))
+                total_correct_count += num_correct_in_pos
+                
+                # ミスがある場合だけ、どの札が足りないか、または余計かを表示する（任意）
+                if set(user_ans_list) != set(correct_list):
+                    missing = correct_set - user_set
+                    extra = user_set - correct_set
+                    error_msg = f"⚠️ {pos_labels[pos]}: "
+                    if missing:
+                        error_msg += f"不足({', '.join(missing)}) "
+                    if extra:
+                        error_msg += f"間違い({', '.join(extra)})"
+                    st.error(error_msg)
+
             st.metric("正解した札の数", f"{total_correct_count} / 25")
+            
             if total_correct_count == 25:
                 st.balloons()
                 st.success("満点です！完璧に覚えていますね！")
+            elif total_correct_count >= 20:
+                st.info(f"あと少し（残り {25 - total_correct_count} 枚）！かなり覚えられています。")
+            else:
+                # 20枚未満の場合
+                st.warning(f"現在は {total_correct_count} 枚正解です。暗記練習をもっと頑張りましょう！")
