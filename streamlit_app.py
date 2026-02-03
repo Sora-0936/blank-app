@@ -278,3 +278,77 @@ if st.checkbox("保存データから配置のクセを分析する"):
 
     except Exception as e:
         st.error(f"分析データの取得に失敗しました: {e}")
+        
+# --- 9. 暗記トレーニングフェーズ ---
+st.divider()
+st.header("🧠 暗記トレーニング")
+
+if len(all_placed_list) < 25:
+    st.info("25枚すべての配置を完了させると、暗記テストを開始できます。")
+else:
+    if 'game_mode' not in st.session_state:
+        st.session_state.game_mode = "waiting" # waiting, memorizing, testing
+
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("暗記スタート！ (配置を表示)"):
+            st.session_state.game_mode = "memorizing"
+    
+    with col2:
+        if st.button("テスト開始！ (配置を隠す)"):
+            st.session_state.game_mode = "testing"
+            # シャッフルしてランダムに1枚選ぶなどのロジックも可能
+            st.session_state.test_target = "l_top" # 例として特定の場所をテスト
+
+    if st.session_state.game_mode == "memorizing":
+        st.success("今のうちに配置を覚えましょう！")
+        # 視覚的に分かりやすく現在の配置を表示
+        # (既存の配置図を表示するロジックを流用)
+
+    elif st.session_state.game_mode == "testing":
+        st.warning("空欄を埋めてください。")
+        
+        # 簡易的なテストフォーム
+        score = 0
+        user_answers = {}
+        
+        test_cols = st.columns(2)
+        with test_cols[0]:
+            st.write("### 左側")
+            user_answers["l_top"] = st.multiselect("左上段にあるはずの札は？", options=base_options, key="ans_lt")
+            user_answers["l_mid"] = st.multiselect("左中段にあるはずの札は？", options=base_options, key="ans_lm")
+            user_answers["l_low"] = st.multiselect("左下段にあるはずの札は？", options=base_options, key="ans_ll")
+        with test_cols[1]:
+            st.write("### 右側")
+            user_answers["r_top"] = st.multiselect("右上段にあるはずの札は？", options=base_options, key="ans_rt")
+            user_answers["r_mid"] = st.multiselect("右中段にあるはずの札は？", options=base_options, key="ans_rm")
+            user_answers["r_low"] = st.multiselect("右下段にあるはずの札は？", options=base_options, key="ans_rl")
+
+        if st.button("答え合わせ"):
+            correct_data = {
+                "l_top": l_top, "l_mid": l_mid, "l_low": l_low,
+                "r_top": r_top, "r_mid": r_mid, "r_low": r_low
+            }
+            
+            total_correct = 0
+            for pos in correct_data:
+                # 集合として比較（順不同の場合）
+                is_correct = set(user_answers[pos]) == set(correct_data[pos])
+                if is_correct:
+                    total_correct += len(correct_data[pos])
+                else:
+                    st.error(f"{pos_labels[pos]} が違います！ 正解: {', '.join(correct_data[pos])}")
+            
+            st.metric("正解数", f"{total_correct} / 25")
+            if total_correct == 25:
+                st.balloons()
+                
+            # スコアをSupabaseに保存（オプション）
+            if st.button("スコアを記録する"):
+                try:
+                    score_data = {"score": total_correct, "deck_name": deck_name if 'deck_name' in locals() else "不明"}
+                    supabase.table("karuta_scores").insert(score_data).execute()
+                    st.success("スコアを保存しました！")
+                except:
+                    st.error("スコア保存用のテーブル 'karuta_scores' が見つかりません。")
